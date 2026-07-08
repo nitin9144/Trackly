@@ -1,13 +1,16 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Rabbit, Shield, Bell ,TrendingDown } from "lucide-react";
+import { Rabbit, Shield, Bell, TrendingDown } from "lucide-react";
 import { LogIn } from "lucide-react";
 import AddProductForm from "@/components/AddProductForm";
 import { createClient } from "@/utils/supabase/server";
 import AuthButton from "@/components/AuthButton";
+import { getProducts } from "./actions";
+import ProductCard from "@/components/ProductCard";
+
 // import { getProducts } from "@/lib/products"
 export default async function Home() {
-   const supabase = await createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -18,7 +21,7 @@ export default async function Home() {
   // } = await supabase.auth.getUser();
   // const products = user ? await getProducts() : [];
 
-const products = []; // Replace with actual product fetching logic
+  const products = user ? await getProducts() : [];
   const FEATURES = [
     {
       icon: Rabbit,
@@ -53,13 +56,13 @@ const products = []; // Replace with actual product fetching logic
           </div>
 
           {/* <AuthButton user={user} /> */}
-  
-           <AuthButton user={user} />
+
+          <AuthButton user={user} />
         </div>
       </header>
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
-         
+
 
           <h2 className="text-5xl font-bold text-gray-900 mb-4 tracking-tight">
             Never Miss a Price Drop
@@ -69,7 +72,7 @@ const products = []; // Replace with actual product fetching logic
             prices drop. Save money effortlessly.
           </p>
 
-          <AddProductForm  user={user}/>
+          <AddProductForm user={user} />
 
           {/* Features */}
           {products.length === 0 && (
@@ -88,20 +91,39 @@ const products = []; // Replace with actual product fetching logic
               ))}
             </div>
           )}
-           {/* Empty State */}
-      {user && products.length === 0 && (
-        <section className="max-w-2xl mx-auto px-4 pb-20 text-center">
-          <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-12">
-            <TrendingDown className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No products yet
-            </h3>
-            <p className="text-gray-600">
-              Add your first product above to start tracking prices!
-            </p>
-          </div>
-        </section>
-      )}
+          {/* Products Grid */}
+          {user && products.length > 0 && (
+            <section className="max-w-7xl mx-auto px-4 pb-20">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Your Tracked Products
+                </h3>
+                <span className="text-sm text-gray-500">
+                  {products.length} {products.length === 1 ? "product" : "products"}
+                </span>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2 items-start">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </section>
+          )}
+          {/* Empty State */}
+          {user && products.length === 0 && (
+            <section className="max-w-2xl mx-auto px-4 pb-20 text-center">
+              <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-12">
+                <TrendingDown className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  No products yet
+                </h3>
+                <p className="text-gray-600">
+                  Add your first product above to start tracking prices!
+                </p>
+              </div>
+            </section>
+          )}
         </div>
       </section>
     </main>

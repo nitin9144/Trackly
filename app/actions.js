@@ -34,37 +34,51 @@ export async function addProduct(formData) {
     const currency = productData.currencyCode || "USD";
 
     // Check if product exists to determine if it's an update
-    const { data: existingProduct } = await supabase
+    const { data: existingProduct, error: existingError } = await supabase
       .from("products")
       .select("id, current_price")
       .eq("user_id", user.id)
       .eq("url", url)
-      .single();
+      .maybeSingle();
+
+    if (existingError) throw existingError;
 
     const isUpdate = !!existingProduct;
+    const productPayload = {
+      user_id: user.id,
+      url,
+      name: productData.productName,
+      current_price: newPrice,
+      currency,
+      image_url: productData.productImageUrl,
+      updated_at: new Date().toISOString(),
+    };
 
-    // Upsert product (insert or update based on user_id + url)
-    const { data: product, error } = await supabase
-      .from("products")
-      .upsert(
-        {
-          user_id: user.id,
-          url,
-          name: productData.productName,
-          current_price: newPrice,
-          currency: currency,
-          image_url: productData.productImageUrl,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "user_id,url", // Unique constraint on user_id + url
-          ignoreDuplicates: false, // Always update if exists
-        }
-      )
-      .select()
-      .single();
+    let product;
+    let productError;
 
-    if (error) throw error;
+    if (isUpdate) {
+      const result = await supabase
+        .from("products")
+        .update(productPayload)
+        .eq("id", existingProduct.id)
+        .select()
+        .single();
+
+      product = result.data;
+      productError = result.error;
+    } else {
+      const result = await supabase
+        .from("products")
+        .insert(productPayload)
+        .select()
+        .single();
+
+      product = result.data;
+      productError = result.error;
+    }
+
+    if (productError) throw productError;
 
     // Add to price history if it's a new product OR price changed
     const shouldAddHistory =
