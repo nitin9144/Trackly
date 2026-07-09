@@ -142,13 +142,53 @@ export async function getProducts() {
 export async function getPriceHistory(productId) {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+
+    // Try direct lookup first (productId should match the stored product_id)
+    console.log("getPriceHistory called with productId:", productId);
+    let { data, error } = await supabase
       .from("price_history")
       .select("*")
       .eq("product_id", productId)
       .order("checked_at", { ascending: true });
 
     if (error) throw error;
+
+    // If no history found, it's possible the incoming `productId` is a different
+    // representation (e.g. numeric vs uuid). Try resolving the product row and
+    // re-querying using the canonical `id` from the `products` table.
+    if ((!data || data.length === 0) && productId != null) {
+      const { data: productRow } = await supabase
+        .from("products")
+        .select("id")
+        .eq("id", productId)
+        .maybeSingle();
+
+      // If the direct id lookup didn't match, try matching by text form
+      // (helps when types differ between client and DB)
+      let resolvedId = productRow?.id;
+      if (!resolvedId) {
+        const { data: productByText } = await supabase
+          .from("products")
+          .select("id")
+          .eq("id::text", String(productId))
+          .maybeSingle();
+        resolvedId = productByText?.id;
+      }
+
+      if (resolvedId) {
+        console.log("Resolved product id to:", resolvedId);
+        const retry = await supabase
+          .from("price_history")
+          .select("*")
+          .eq("product_id", resolvedId)
+          .order("checked_at", { ascending: true });
+
+        if (retry.error) throw retry.error;
+        data = retry.data || [];
+      }
+    }
+
+    console.log("price_history rows found:", (data || []).length);
     return data || [];
   } catch (error) {
     console.error("Get price history error:", error);

@@ -19,15 +19,23 @@ export default function PriceChart({ productId }) {
 
   useEffect(() => {
     async function loadData() {
-      const history = await getPriceHistory(productId);
+      try {
+        const history = await getPriceHistory(productId);
+        console.log("PriceChart: fetched history:", history);
 
-      const chartData = history.map((item) => ({
-        date: new Date(item.checked_at).toLocaleDateString(),
-        price: parseFloat(item.price),
-      }));
+        const chartData = history.map((item) => ({
+          date: new Date(item.checked_at).toLocaleDateString(),
+          price: parseFloat(item.price),
+        }));
 
-      setData(chartData);
-      setLoading(false);
+        console.log("PriceChart: chartData:", chartData);
+
+        setData(chartData);
+      } catch (err) {
+        console.error("PriceChart loadData error:", err);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadData();
