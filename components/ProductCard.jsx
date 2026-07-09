@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { deleteProduct } from "@/app/actions";
-// import PriceChart from "./PriceChart";
+import PriceChart from "./PriceChart";
 import {
   Card,
   CardContent,
