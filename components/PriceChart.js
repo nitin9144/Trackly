@@ -78,9 +78,9 @@ export default function PriceChart({ productId }) {
           <Line
             type="monotone"
             dataKey="price"
-            stroke="#FA5D19"
+            stroke="#16A34A"
             strokeWidth={2}
-            dot={{ fill: "#FA5D19", r: 4 }}
+            dot={{ fill: "#16A34A", r: 4 }}
             activeDot={{ r: 6 }}
           />
         </LineChart>
